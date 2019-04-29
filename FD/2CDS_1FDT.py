@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from scipy import sparse
 from scipy import linalg
 
-import math
 import imageio
 
 # -------------------------------
@@ -77,7 +76,7 @@ lap = sparse.dia_matrix(lap)
 # plt.show()
 
 # Initialize filenames for gif generation
-filenames = ['t'+str(x).zfill(3)+'.png' for x in range(math.floor(np.size(t)/dump))]
+filenames = ['t'+str(x).zfill(3)+'.png' for x in range(int(np.size(t)/dump)+1)]
 # -------------------------------
 # MAIN LOOP
 # -------------------------------
