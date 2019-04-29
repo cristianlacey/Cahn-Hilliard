@@ -70,10 +70,9 @@ lap = sparse.dia_matrix(lap)
 for i in range(np.size(t)):
     print(t[i])
     if i % dump == 0:
-        phi = phi.reshape((N,N),order='F')
-        plt.imshow(phi)
+        phi_plot = phi.reshape((N,N),order='F')
+        plt.imshow(phi_plot)
         plt.colorbar()
         plt.savefig('./t'+str(int(i/dump)).zfill(3)+'.png', dpi=300)
         plt.clf()
-        phi = np.ravel(phi, order='F')
     phi = update(phi,dt,lap)
