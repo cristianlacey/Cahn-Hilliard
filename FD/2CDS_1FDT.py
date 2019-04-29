@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 from scipy import sparse
 from scipy import linalg
 
+import math
+import imageio
+
 # -------------------------------
 # FUNCTION DEFINITIONS
 # -------------------------------
@@ -33,6 +36,14 @@ def update(phi,dt,lap):
 
     return phi_n
 
+def generate_gif(filenames,output_path):
+    '''
+    Generate gif from list of filenames.
+    '''
+    with imageio.get_writer(output_path, mode='I') as writer:
+        for filename in filenames:
+            image = imageio.imread(filename)
+            writer.append_data(image)
 # -------------------------------
 # INPUT PARAMETERS
 # -------------------------------
@@ -45,6 +56,7 @@ dump = 1000 # dump an image every 'dump' steps
 phi_avg = 0 # initial mean value of phi
 noise = 0.1 # initial amplitude of fluctuations
 
+output_path = './output.gif'
 # -------------------------------
 # INITIALIZATION
 # -------------------------------
@@ -64,6 +76,8 @@ lap = sparse.dia_matrix(lap)
 # plt.matshow(lap)
 # plt.show()
 
+# Initialize filenames for gif generation
+filenames = ['t'+str(x).zfill(3)+'.png' for x in range(math.floor(np.size(t)/dump))]
 # -------------------------------
 # MAIN LOOP
 # -------------------------------
@@ -76,3 +90,5 @@ for i in range(np.size(t)):
         plt.savefig('./t'+str(int(i/dump)).zfill(3)+'.png', dpi=300)
         plt.clf()
     phi = update(phi,dt,lap)
+
+generate_gif(filenames,output_path)
