@@ -35,6 +35,22 @@ def update(phi,dt,lap):
 
     return phi_n
 
+def kron_A_N(A, N):  # Simulates np.kron(A, np.eye(N))
+    m,n = A.shape
+    out = np.zeros((m,N,n,N),dtype=A.dtype)
+    r = np.arange(N)
+    out[:,r,:,r] = A
+    out.shape = (m*N,n*N)
+    return out
+
+def kron_N_A(A, N):  # Simulates np.kron(np.eye(N), A)
+    m,n = A.shape
+    out = np.zeros((N,m,N,n),dtype=A.dtype)
+    r = np.arange(N)
+    out[r,:,r,:] = A
+    out.shape = (m*N,n*N)
+    return out
+
 def generate_gif(filenames,output_path):
     '''
     Generate gif from list of filenames.
@@ -69,8 +85,9 @@ phi = np.ravel(phi, order='F')
 # Define Laplace operator with periodic BCs, then convert to sparse.dia_matrix
 # object to leverage faster matrix multiplication of block-banded Laplacian
 A = sparse.diags([1,1,-2,1,1], [-(N-1),-1,0,1,(N-1)], shape=(N,N)).toarray()
-I = np.eye(N)
-lap = np.kron(I,A) + np.kron(A,I)
+# I = np.eye(N)
+# lap = np.kron(I,A) + np.kron(A,I)
+lap = kron_N_A(A,N) + kron_A_N(A,N)
 lap = sparse.dia_matrix(lap)
 # plt.matshow(lap)
 # plt.show()
