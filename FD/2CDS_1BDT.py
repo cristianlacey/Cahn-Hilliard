@@ -15,10 +15,10 @@ import imageio
 # -------------------------------
 # FUNCTION DEFINITIONS
 # -------------------------------
-def update(phi,dt,lap,tol=1e-3):
+def update(phi,dt,lap,A_inv,tol=1e-6):
     '''
     Updates current state of phi using second order centered difference
-    in space and first order forward Euler in time.
+    in space and first order backward Euler in time.
         Args:
             phi (np.array): Array in col major format of phase concentration.
             dt (float): Timestep size
@@ -32,19 +32,17 @@ def update(phi,dt,lap,tol=1e-3):
     rhs = lap.dot(np.power(phi,3) - phi - (lap.dot(phi)))
     # Step forward in time with first order Euler
     phi_n = phi + dt*rhs
-    print(phi_n.shape)
+    # print(phi_n.shape)
 
-    N2 = len(phi) # N squared
-    A = np.eye(N2) + dt*(lap + lap.dot(lap))
-    A_inv = np.linalg.inv(A)
+    # N2 = len(phi) # N squared
+    # A = np.eye(N2) + dt*(lap + lap.dot(lap))
+    # A_inv = np.linalg.inv(A)
 
-    while np.amax(phi - phi_n) > tol:
-        print(N2)
-        print(np.amax(phi - phi_n))
-        b = phi + dt*lap.dot(phi_n**3)
-        print(A_inv.shape)
+    phi_p = np.zeros((len(phi),1))
+    while np.amax(np.absolute(phi_n - phi_p)) > tol:
+        b = phi + dt*lap.dot(np.power(phi_n,3))
         phi_n = np.dot(A_inv,b)
-        print(phi_n.shape)
+        phi_p = phi_n
 
     return phi_n
 
@@ -60,12 +58,12 @@ def generate_gif(filenames,output_path):
 # -------------------------------
 # INPUT PARAMETERS
 # -------------------------------
-N = 10 # lattice points per axis
+N = 100 # lattice points per axis
 dx = 1 # lattice spacing
-dt = 0.01 # timestep size
-tsteps = 10001 # number of timesteps
+dt = 0.05 # timestep size
+tsteps = 2002 # number of timesteps
 
-dump = 1000 # dump an image every 'dump' steps
+dump = 100 # dump an image every 'dump' steps
 phi_avg = 0 # initial mean value of phi
 noise = 0.1 # initial amplitude of fluctuations
 seed = 0 # seed for random initilization (use None for random output)
@@ -84,7 +82,8 @@ t = np.arange(0, tsteps*dt, dt)
 
 # Unravel phi in col major form
 phi = np.ravel(phi, order='F')
-
+phi = phi.reshape(len(phi),1)
+# print(phi.shape)
 # Define Laplace operator with periodic BCs, then convert to sparse.dia_matrix
 # object to leverage faster matrix multiplication of block-banded Laplacian
 A = sparse.diags([1,1,-2,1,1], [-(N-1),-1,0,1,(N-1)], shape=(N,N)).toarray()
@@ -93,6 +92,10 @@ lap = sparse.kron(I,A) + sparse.kron(A,I)
 lap = sparse.dia_matrix(lap)
 # plt.matshow(lap)
 # plt.show()
+
+# Precompute A_inv
+A = np.eye(N*N) + dt*(lap + lap.dot(lap))
+A_inv = np.linalg.inv(A)
 
 # Initialize filenames for gif generation
 filenames = ['t'+str(x).zfill(3)+'.png' for x in range(int(np.size(t)/dump)+1)]
@@ -108,6 +111,6 @@ for i in range(np.size(t)):
         plt.colorbar()
         plt.savefig('./t'+str(int(i/dump)).zfill(3)+'.png', dpi=300)
         plt.clf()
-    phi = update(phi,dt,lap)
+    phi = update(phi,dt,lap,A_inv)
 
 generate_gif(filenames,output_path)
