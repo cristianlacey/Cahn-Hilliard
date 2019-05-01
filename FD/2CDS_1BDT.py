@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy import sparse
+import scipy.sparse.linalg as la
 from scipy import linalg
 
 import imageio
@@ -96,6 +97,8 @@ lap = sparse.dia_matrix(lap)
 # Precompute A_inv
 A = np.eye(N*N) + dt*(lap + lap.dot(lap))
 A_inv = np.linalg.inv(A)
+# A = sparse.csc_matrix(A)
+# A_inv = la.inv(A)
 
 # Initialize filenames for gif generation
 filenames = ['t'+str(x).zfill(3)+'.png' for x in range(int(np.size(t)/dump)+1)]
