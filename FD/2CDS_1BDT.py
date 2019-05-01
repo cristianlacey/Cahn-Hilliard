@@ -28,21 +28,21 @@ def update(phi,dt,lap,A_inv,tol=1e-6):
             phi_n (np.array): Array in col major format of phase concentration
             in next timestep.
     '''
-    # Get initial guess from first order euler in time
+    # Get initial guess from first order Euler in time
     # Calculate right-hand side of PDE
     rhs = lap.dot(np.power(phi,3) - phi - (lap.dot(phi)))
     # Step forward in time with first order Euler
     phi_n = phi + dt*rhs
-    # print(phi_n.shape)
 
-    # N2 = len(phi) # N squared
-    # A = np.eye(N2) + dt*(lap + lap.dot(lap))
-    # A_inv = np.linalg.inv(A)
-
+    # Refine forward Euler estimate by converging to backward Euler, writing
+    # the PDE in the form A(phi-)phi = b(phi-). In this case, A(phi-) is
+    # constant form iter to iter, so its inverse is pre-computed and passed to
+    # update(), allowing phi to be iteratively solved as phi = A_inv@b(phi-).
     phi_p = np.zeros((len(phi),1))
     while np.amax(np.absolute(phi_n - phi_p)) > tol:
         b = phi + dt*lap.dot(np.power(phi_n,3))
-        phi_n = np.dot(A_inv,b)
+        # phi_n = np.dot(A_inv,b)
+        phi_n = A_inv.dot(b)
         phi_p = phi_n
 
     return phi_n
@@ -61,10 +61,10 @@ def generate_gif(filenames,output_path):
 # -------------------------------
 N = 100 # lattice points per axis
 dx = 1 # lattice spacing
-dt = 0.05 # timestep size
-tsteps = 2002 # number of timesteps
+dt = 0.02 # timestep size
+tsteps = 5001 # number of timesteps
 
-dump = 100 # dump an image every 'dump' steps
+dump = 500 # dump an image every 'dump' steps
 phi_avg = 0 # initial mean value of phi
 noise = 0.1 # initial amplitude of fluctuations
 seed = 0 # seed for random initilization (use None for random output)
@@ -84,7 +84,7 @@ t = np.arange(0, tsteps*dt, dt)
 # Unravel phi in col major form
 phi = np.ravel(phi, order='F')
 phi = phi.reshape(len(phi),1)
-# print(phi.shape)
+
 # Define Laplace operator with periodic BCs, then convert to sparse.dia_matrix
 # object to leverage faster matrix multiplication of block-banded Laplacian
 A = sparse.diags([1,1,-2,1,1], [-(N-1),-1,0,1,(N-1)], shape=(N,N)).toarray()
@@ -96,9 +96,9 @@ lap = sparse.dia_matrix(lap)
 
 # Precompute A_inv
 A = np.eye(N*N) + dt*(lap + lap.dot(lap))
-A_inv = np.linalg.inv(A)
-# A = sparse.csc_matrix(A)
-# A_inv = la.inv(A)
+# A_inv = np.linalg.inv(A)
+A = sparse.csc_matrix(A)
+A_inv = la.inv(A)
 
 # Initialize filenames for gif generation
 filenames = ['t'+str(x).zfill(3)+'.png' for x in range(int(np.size(t)/dump)+1)]
