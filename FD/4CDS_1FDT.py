@@ -1,7 +1,7 @@
 """ 2CDS_1FDT.py
 This file is a part of Cahn-Hilliard
 Authors: Cristian Lacey, Sijie Tong
-This file contains a routine to solve the Cahn-Hilliard equation using second
+This file contains a routine to solve the Cahn-Hilliard equation using fourth
 order centered difference in space and first order forward Euler in time.
 """
 import numpy as np
@@ -17,7 +17,7 @@ import imageio
 # -------------------------------
 def update(phi,dt,lap):
     '''
-    Updates current state of phi using second order centered difference
+    Updates current state of phi using fourth order centered difference
     in space and first order forward Euler in time.
         Args:
             phi (np.array): Array in col major format of phase concentration.
@@ -74,8 +74,8 @@ phi = np.ravel(phi, order='F')
 
 # Define Laplace operator with periodic BCs, then convert to sparse.dia_matrix
 # object to leverage faster matrix multiplication of block-banded Laplacian
-A = sparse.diags([1,1,-2,1,1], [-(N-1),-1,0,1,(N-1)], shape=(N,N)).toarray()
-A = A/(dx*dx)
+A = sparse.diags([16,-1,-1,16,-30,16,-1,-1,16], [-(N-1),-(N-2),-2,-1,0,1,2,(N-2),(N-1)], shape=(N,N)).toarray()
+A = A/(12*dx*dx)
 I = np.eye(N)
 lap = sparse.kron(I,A) + sparse.kron(A,I)
 lap = sparse.dia_matrix(lap)

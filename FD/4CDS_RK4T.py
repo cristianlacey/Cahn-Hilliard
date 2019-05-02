@@ -1,8 +1,8 @@
 """ 2CDS_1FDT.py
 This file is a part of Cahn-Hilliard
 Authors: Cristian Lacey, Sijie Tong
-This file contains a routine to solve the Cahn-Hilliard equation using second
-order centered difference in space and first order forward Euler in time.
+This file contains a routine to solve the Cahn-Hilliard equation using fourth
+order centered difference in space and fourth order Runge-Kutta in time.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,8 +17,8 @@ import imageio
 # -------------------------------
 def update(phi,dt,lap):
     '''
-    Updates current state of phi using second order centered difference
-    in space and first order forward Euler in time.
+    Updates current state of phi using fourth order centered difference
+    in space and fourth order Runge-Kutta in time.
         Args:
             phi (np.array): Array in col major format of phase concentration.
             dt (float): Timestep size
@@ -27,13 +27,20 @@ def update(phi,dt,lap):
             phi_n (np.array): Array in col major format of phase concentration
             in next timestep.
     '''
-    # Calculate right-hand side of PDE
-    rhs = lap.dot(np.power(phi,3) - phi - (lap.dot(phi)))
 
-    # Step forward in time with first order Euler
-    phi_n = phi + dt*rhs
+    k1 = dt*calc_rhs(phi,lap)
+    k2 = dt*calc_rhs(phi+k1/2,lap)
+    k3 = dt*calc_rhs(phi+k2/2,lap)
+    k4 = dt*calc_rhs(phi+k3,lap)
+    phi_n = phi + (k1 + 2*k2 + 2*k3 + k4)/6
 
     return phi_n
+
+def calc_rhs(phi,lap):
+    '''
+    Calculates the right-hand side of the Cahn-Hilliard PDE, with D = gamma = 1
+    '''
+    return lap.dot(np.power(phi,3) - phi - (lap.dot(phi)))
 
 def generate_gif(filenames,output_path):
     '''
@@ -49,7 +56,7 @@ def generate_gif(filenames,output_path):
 # -------------------------------
 N = 100 # lattice points per axis
 dx = 1 # lattice spacing
-dt = 0.01 # timestep size
+dt = 0.02 # timestep size
 tsteps = 10001 # number of timesteps
 
 dump = 1000 # dump an image every 'dump' steps
@@ -74,8 +81,8 @@ phi = np.ravel(phi, order='F')
 
 # Define Laplace operator with periodic BCs, then convert to sparse.dia_matrix
 # object to leverage faster matrix multiplication of block-banded Laplacian
-A = sparse.diags([1,1,-2,1,1], [-(N-1),-1,0,1,(N-1)], shape=(N,N)).toarray()
-A = A/(dx*dx)
+A = sparse.diags([16,-1,-1,16,-30,16,-1,-1,16], [-(N-1),-(N-2),-2,-1,0,1,2,(N-2),(N-1)], shape=(N,N)).toarray()
+A = A/(12*dx*dx)
 I = np.eye(N)
 lap = sparse.kron(I,A) + sparse.kron(A,I)
 lap = sparse.dia_matrix(lap)

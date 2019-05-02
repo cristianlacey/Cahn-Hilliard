@@ -16,7 +16,7 @@ import imageio
 # -------------------------------
 # FUNCTION DEFINITIONS
 # -------------------------------
-def update(phi,dt,lap,A_inv,tol=1e-6):
+def update(phi,dt,lap,A,tol=1e-6):
     '''
     Updates current state of phi using second order centered difference
     in space and first order backward Euler in time.
@@ -41,8 +41,8 @@ def update(phi,dt,lap,A_inv,tol=1e-6):
     phi_p = np.zeros((len(phi),1))
     while np.amax(np.absolute(phi_n - phi_p)) > tol:
         b = phi + dt*lap.dot(np.power(phi_n,3))
-        # phi_n = np.dot(A_inv,b)
-        phi_n = A_inv.dot(b)
+        phi_n = la.cg(A,b,x0=phi_n)[0]
+        # phi_n = A_inv.dot(b)
         phi_p = phi_n
 
     return phi_n
@@ -59,12 +59,12 @@ def generate_gif(filenames,output_path):
 # -------------------------------
 # INPUT PARAMETERS
 # -------------------------------
-N = 100 # lattice points per axis
+N = 50 # lattice points per axis
 dx = 1 # lattice spacing
-dt = 0.02 # timestep size
+dt = 0.04 # timestep size
 tsteps = 5001 # number of timesteps
 
-dump = 500 # dump an image every 'dump' steps
+dump = 250 # dump an image every 'dump' steps
 phi_avg = 0 # initial mean value of phi
 noise = 0.1 # initial amplitude of fluctuations
 seed = 0 # seed for random initilization (use None for random output)
@@ -75,7 +75,7 @@ output_path = './output.gif'
 # INITIALIZATION
 # -------------------------------
 # Initialize seed value
-seed = np.random.seed(seed=seed)
+np.random.seed(seed=seed)
 
 # Initialize phi as NxN matrix with random values bounded by phi_avg + noise/2
 phi = phi_avg*(np.ones((N,N))) + noise*(np.random.rand(N,N)-0.5)
@@ -88,6 +88,7 @@ phi = phi.reshape(len(phi),1)
 # Define Laplace operator with periodic BCs, then convert to sparse.dia_matrix
 # object to leverage faster matrix multiplication of block-banded Laplacian
 A = sparse.diags([1,1,-2,1,1], [-(N-1),-1,0,1,(N-1)], shape=(N,N)).toarray()
+A = A/(dx*dx)
 I = np.eye(N)
 lap = sparse.kron(I,A) + sparse.kron(A,I)
 lap = sparse.dia_matrix(lap)
@@ -98,7 +99,7 @@ lap = sparse.dia_matrix(lap)
 A = np.eye(N*N) + dt*(lap + lap.dot(lap))
 # A_inv = np.linalg.inv(A)
 A = sparse.csc_matrix(A)
-A_inv = la.inv(A)
+# A_inv = la.inv(A)
 
 # Initialize filenames for gif generation
 filenames = ['t'+str(x).zfill(3)+'.png' for x in range(int(np.size(t)/dump)+1)]
@@ -114,6 +115,6 @@ for i in range(np.size(t)):
         plt.colorbar()
         plt.savefig('./t'+str(int(i/dump)).zfill(3)+'.png', dpi=300)
         plt.clf()
-    phi = update(phi,dt,lap,A_inv)
+    phi = update(phi,dt,lap,A)
 
 generate_gif(filenames,output_path)
