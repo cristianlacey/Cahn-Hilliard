@@ -76,7 +76,7 @@ phi = np.ravel(phi, order='F')
 # object to leverage faster matrix multiplication of block-banded Laplacian
 A = sparse.diags([1,1,-2,1,1], [-(N-1),-1,0,1,(N-1)], shape=(N,N)).toarray()
 A = A/(dx*dx)
-I = np.eye(N)
+I = sparse.eye(N)
 lap = sparse.kron(I,A) + sparse.kron(A,I)
 lap = sparse.dia_matrix(lap)
 # plt.matshow(lap)
