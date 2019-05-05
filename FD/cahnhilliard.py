@@ -158,9 +158,9 @@ class CahnHilliard():
         '''
         phi_p = np.zeros((len(phi),1))
         while np.amax(np.absolute(phi_n - phi_p)) > tol:
+            phi_p = phi_n
             b = phi + dt*lap.dot(np.power(phi_n,3))
             phi_n = la.cg(B,b,x0=phi_n)[0]
-            phi_p = phi_n
         return phi_n
 
     def crank_nicolson(self,phi,lap,dt,phi_n,B,tol):
@@ -174,9 +174,9 @@ class CahnHilliard():
         '''
         phi_p = np.zeros((len(phi),1))
         while np.amax(np.absolute(phi_n - phi_p)) > tol:
+            phi_p = phi_n
             b = phi + dt*(lap.dot(np.power(phi_n,3)) + self.calc_rhs(phi,lap))/2
             phi_n = la.cg(B,b,x0=phi_n)[0]
-            phi_p = phi_n
         return phi_n
 
     @staticmethod
@@ -249,27 +249,27 @@ class CahnHilliard():
 # Sample run. Comment out for imports
 # inputs = {
 # 'N' : 100, # lattice points per axis
-# 'dx' : 1, # lattice spacing
-# 'dt' : 0.01, # timestep size
-# 'tsteps' : 10001, # number of timesteps
+# 'dx' : 0.5, # lattice spacing
+# 'dt' : 0.001, # timestep size
+# 'tsteps' : 100001, # number of timesteps
 # 'tol' : 1e-5, # convergence criterion for implicit methods (not used for explicit)
 #
-# 'dump' : 1000, # dump an image every 'dump' steps
+# 'dump' : 10000, # dump an image every 'dump' steps
 # 'phi_avg' : 0, # initial mean value of phi
 # 'noise' : 0.1, # initial amplitude of fluctuations
 # 'seed' : 0, # seed for random initilization (use None for random output)
 #
-# 'spatial_method' : '2CD', # Choice of 2CD, 4CD
-# 'time_method' : '1FE', # Choice of 1FE, RK4, 1BE, 2CN
+# 'spatial_method' : '4CD', # Choice of 2CD, 4CD
+# 'time_method' : 'RK4', # Choice of 1FE, RK4, 1BE, 2CN
 # 'sparse_format' : 'csr', # Choice of dia, csc, csr
 #
 # 'output_gif' : True,
 # 'output_path' : './output.gif',
 # }
-
-# -------------------------------
-# MAIN
-# -------------------------------
-# Sample run. Comment out for imports
+#
+# # -------------------------------
+# # MAIN
+# # -------------------------------
+# # Sample run. Comment out for imports
 # ch = CahnHilliard(**inputs)
 # ch.run()
