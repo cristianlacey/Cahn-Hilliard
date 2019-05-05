@@ -1,8 +1,8 @@
-""" 2CDS_1FDT.py
+""" cahnhilliard.py
 This file is a part of Cahn-Hilliard
 Authors: Cristian Lacey, Sijie Tong
-This file contains a routine to solve the Cahn-Hilliard equation using fourth
-order centered difference in space and fourth order Runge-Kutta in time.
+This file contains the class CahnHilliard(), objects of which solve the
+Cahn-Hilliard equation using specified spatial and temporal methods.
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,7 +20,7 @@ class CahnHilliard():
     '''
     Class to solve the Cahn-Hilliard equation. Objects are instantiated with
     unpacked dictionary of input parameters. Output is then simply generated
-    by envoking the .run() method of the created object.
+    by invoking the .run() method of the created object.
     '''
     def __init__(self,N,dx,dt,tsteps,tol,dump,phi_avg,noise,seed,\
             spatial_method,time_method,sparse_format,output_gif,output_path):
@@ -246,29 +246,30 @@ class CahnHilliard():
 # -------------------------------
 # INPUT PARAMETERS
 # -------------------------------
-inputs = {
-'N' : 100, # lattice points per axis
-'dx' : 1, # lattice spacing
-'dt' : 0.01, # timestep size
-'tsteps' : 10001, # number of timesteps
-'tol' : 1e-5, # convergence criterion for implicit methods (not used for explicit)
-
-'dump' : 1000, # dump an image every 'dump' steps
-'phi_avg' : 0, # initial mean value of phi
-'noise' : 0.1, # initial amplitude of fluctuations
-'seed' : 0, # seed for random initilization (use None for random output)
-
-'spatial_method' : '2CD', # Choice of 2CD, 4CD
-'time_method' : '1FE', # Choice of 1FE, RK4, 1BE, 2CN
-'sparse_format' : 'csr', # Choice of dia, csc, csr
-
-'output_gif' : True,
-'output_path' : './output.gif',
-}
+# Sample run. Comment out for imports
+# inputs = {
+# 'N' : 100, # lattice points per axis
+# 'dx' : 1, # lattice spacing
+# 'dt' : 0.01, # timestep size
+# 'tsteps' : 10001, # number of timesteps
+# 'tol' : 1e-5, # convergence criterion for implicit methods (not used for explicit)
+#
+# 'dump' : 1000, # dump an image every 'dump' steps
+# 'phi_avg' : 0, # initial mean value of phi
+# 'noise' : 0.1, # initial amplitude of fluctuations
+# 'seed' : 0, # seed for random initilization (use None for random output)
+#
+# 'spatial_method' : '2CD', # Choice of 2CD, 4CD
+# 'time_method' : '1FE', # Choice of 1FE, RK4, 1BE, 2CN
+# 'sparse_format' : 'csr', # Choice of dia, csc, csr
+#
+# 'output_gif' : True,
+# 'output_path' : './output.gif',
+# }
 
 # -------------------------------
 # MAIN
 # -------------------------------
 # Sample run. Comment out for imports
-ch = CahnHilliard(**inputs)
-ch.run()
+# ch = CahnHilliard(**inputs)
+# ch.run()

@@ -1,2 +1,3 @@
 *.png
 *.gif
+__pycache__/
