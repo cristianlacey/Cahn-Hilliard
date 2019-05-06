@@ -4,6 +4,11 @@ Authors: Cristian Lacey, Sijie Tong
 This file contains an example of using the class CahnHilliard() to quickly loop
 over simulations with different input parameters.
 """
+import sys
+import os
+srcDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/src'
+sys.path.insert(0,srcDir)
+
 from cahnhilliard import CahnHilliard
 
 # -------------------------------

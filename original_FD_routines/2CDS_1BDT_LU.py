@@ -40,12 +40,13 @@ def update(phi,dt,lap,L,U,tol=1e-6):
     # update(), allowing phi to be iteratively solved as phi = A_inv@b(phi-).
     phi_p = np.zeros((len(phi),1))
     while np.amax(np.absolute(phi_n - phi_p)) > tol:
+        phi_p = phi_n
         b = phi + dt*lap.dot(np.power(phi_n,3))
         c = -U.dot(phi_n)+b
         phi_n = la.spsolve_triangular(L,c,lower=True)
         # phi_n = la.cg(A,b,x0=phi_n)[0]
         # phi_n = A_inv.dot(b)
-        phi_p = phi_n
+
 
     return phi_n
 
@@ -63,7 +64,7 @@ def generate_gif(filenames,output_path):
 # -------------------------------
 N = 100 # lattice points per axis
 dx = 1 # lattice spacing
-dt = 0.02 # timestep size
+dt = 0.01 # timestep size
 tsteps = 5001 # number of timesteps
 
 dump = 250 # dump an image every 'dump' steps
