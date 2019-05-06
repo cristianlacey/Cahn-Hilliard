@@ -40,6 +40,7 @@ class CahnHilliard():
         self.output_gif = output_gif
         self.output_path = output_path
 
+
         # Initialize seed value
         np.random.seed(seed=seed)
 
@@ -56,8 +57,11 @@ class CahnHilliard():
         self.lap = self.get_laplacian(N,dx,spatial_method,sparse_format)
 
         # Get B matrix (only used for implicit methods) None if explicit method
-        self.B = self.get_B(N,dt,self.lap,time_method=time_method,sparse_format=sparse_format)
+        self.B = self.get_B(N,dt,self.lap,spatial_method=spatial_method,time_method=time_method,sparse_format=sparse_format)
 
+        # Get k^2 for spectral method
+        self.k2 = self.get_k2(N,spatial_method=spatial_method)
+        
         # Initialize filenames for gif generation
         self.filenames = ['t'+str(x).zfill(3)+'.png' for x in range(int(tsteps/dump)+1)]
 
@@ -77,6 +81,7 @@ class CahnHilliard():
         filenames = self.filenames
         output_gif = self.output_gif
         output_path = self.output_path
+        spatial_method = self.spatial_method
         time_method = self.time_method
         B = self.B
         tol = self.tol
@@ -89,12 +94,12 @@ class CahnHilliard():
                 plt.colorbar()
                 plt.savefig('./t'+str(int(i/dump)).zfill(3)+'.png', dpi=300)
                 plt.clf()
-            phi = self.step(phi,dt,lap,time_method,B,tol)
+            phi = self.step(phi,dt,lap,spatial_method,time_method,B,tol)
 
         if output_gif:
             self.generate_gif(filenames,output_path)
 
-    def step(self,phi,dt,lap,time_method,B,tol):
+    def step(self,phi,dt,lap,spatial_method,time_method,B,tol):
         '''
         Updates current state of phi using specified temporal method.
             Args:
@@ -109,23 +114,62 @@ class CahnHilliard():
                 phi_n (np.array): Array in col major format of phase
                     concentration in next timestep.
         '''
-        if time_method == '1FE':
+        if spatial_method == 'spectral':
+            if time_method == 'semi-implicit':
+                phi_n = self.spectral_semi_implicit(phi,dt)
+            if time_method == 'explicit':
+                phi_n = self.spectral_explicit(phi,dt)
+                
+
+        elif time_method == '1FE':
             phi_n = self.forward_euler(phi,lap,dt)
 
-        if time_method == 'RK4':
+        elif time_method == 'RK4':
             phi_n = self.rk4(phi,lap,dt)
 
-        if time_method == '1BE':
+        elif time_method == '1BE':
             # Take forward euler result as initial guess
             phi_n = self.forward_euler(phi,lap,dt)
             phi_n = self.backward_euler(phi,lap,dt,phi_n,B,tol)
 
-        if time_method == '2CN':
+        elif time_method == '2CN':
             # Take forward euler result as initial guess
             phi_n = self.forward_euler(phi,lap,dt)
             phi_n = self.crank_nicolson(phi,lap,dt,phi_n,B,tol)
 
+        
         return phi_n
+
+    def spectral_semi_implicit(self,phi,dt):
+        '''
+        Updates current state of phi using semi-implicit spectral method 
+        '''
+        k2 = self.k2
+        N = self.N
+        phi = phi.reshape((N,N),order='F')
+        phi_hat = np.fft.fft2(phi)
+        g = phi**3-phi
+        g_hat = np.fft.fft2(g)
+        phi_hat = (-dt*k2*g_hat+phi_hat)/(1+dt*k2**2)
+        phi = np.real(np.fft.ifft2(phi_hat))
+        phi = np.ravel(phi, order='F')
+        return phi
+
+    def spectral_explicit(self,phi,dt):
+        '''
+        Updates current state of phi using explicit spectral method 
+        '''
+        k2 = self.k2
+        N = self.N
+        phi = phi.reshape((N,N),order='F')
+        phi_hat = np.fft.fft2(phi)
+        g = phi**3-phi
+        g_hat = np.fft.fft2(g)
+        phi_hat = phi_hat-k2*dt*(g_hat+k2*phi_hat)
+        phi = np.real(np.fft.ifft2(phi_hat))
+        phi = np.ravel(phi, order='F')
+        return phi
+        
 
     def forward_euler(self,phi,lap,dt):
         '''
@@ -192,13 +236,16 @@ class CahnHilliard():
         Define Laplace operator with periodic BCs, then convert to sparse
         object to leverage faster matrix multiplication of block-banded Laplacian.
         '''
-        if spatial_method == '2CD':
+        if spatial_method == 'spectral':
+            return None
+        elif spatial_method == '2CD':
             A = sparse.diags([1,1,-2,1,1],[-(N-1),-1,0,1,(N-1)],shape=(N,N)).toarray()
             A = A/(dx*dx)
         elif spatial_method == '4CD':
             A = sparse.diags([16,-1,-1,16,-30,16,-1,-1,16],\
                 [-(N-1),-(N-2),-2,-1,0,1,2,(N-2),(N-1)],shape=(N,N)).toarray()
             A = A/(12*dx*dx)
+  
         I = sparse.eye(N)
         lap = sparse.kron(I,A) + sparse.kron(A,I)
         if sparse_format == 'dia':
@@ -211,12 +258,14 @@ class CahnHilliard():
         return lap
 
     @staticmethod
-    def get_B(N,dt,lap,time_method='1FE',sparse_format='csr'):
+    def get_B(N,dt,lap,spatial_method,time_method='1FE',sparse_format='csr'):
         '''
         Returns B matrix corresponding to time method. Returns None for
         explicit methods. See implementation of implicit methods for more
         detail on B.
         '''
+        if spatial_method == 'spectral':
+            return None
         if time_method in ['1FE','RK4']:
             return None
         elif time_method == '1BE':
@@ -233,6 +282,17 @@ class CahnHilliard():
 
         return B
 
+    def get_k2(self,N,spatial_method='spectral'):
+
+        if spatial_method == 'spectral':
+            kx1d = np.append(np.linspace(0,N//2,N//2+1),np.linspace(-((N-1)//2),-1,(N-1)//2))*2*np.pi/N
+            ky1d = kx1d
+            kx, ky =np.meshgrid(kx1d,ky1d)
+            k2 = kx**2+ky**2
+            return k2
+        else:
+            return None
+        
     @staticmethod
     def generate_gif(filenames,output_path):
         '''

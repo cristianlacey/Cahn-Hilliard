@@ -21,7 +21,7 @@ global_inputs = {
 'noise' : 0.1, # initial amplitude of fluctuations
 'seed' : 0, # seed for random initilization (use None for random output)
 
-'spatial_method' : '2CD', # Choice of 2CD, 4CD
+#'spatial_method' : '2CD', # Choice of 2CD, 4CD
 # 'time_method' : '1FE', # Choice of 1FE, RK4, 1BE, 2CN
 'sparse_format' : 'csr', # Choice of dia, csc, csr
 
@@ -33,7 +33,9 @@ global_inputs = {
 # (comment out looped over inputs in global_inputs dict, ie N, spatial method)
 specific_inputs = [
 # {'N':100,'time_method':'1FE','dt' : 0.01,'tsteps' : 10001,'dump' : 1000,'output_path' : './output1.gif'},
-{'N':100,'time_method':'1BE','dt' : 0.4,'tsteps' : 401,'dump' : 40,'output_path' : './output2.gif'},
+#{'N':100,'spatial_method':'2CD','time_method':'1BE','dt' : 0.2,'tsteps' : 401,'dump' : 40,'output_path' : './output2.gif'},
+#{'N':100,'spatial_method':'spectral','time_method':'semi-implicit','dt' : 0.2,'tsteps' : 401,'dump' : 40,'output_path' : './output3.gif'},
+{'N':100,'spatial_method':'spectral','time_method':'explicit','dt' : 0.004,'tsteps' : 12001,'dump' : 1200,'output_path' : './output4.gif'},
 # {'N':100,'time_method':'2CD','output_path' : './output3.gif'}
 ]
 
