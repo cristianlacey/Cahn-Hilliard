@@ -1,11 +1,12 @@
 """ 1FE_compare_N.py
 This file is a part of Cahn-Hilliard
-Authors: Cristian Lacey, Sijie Tong
+Authors: Cristian Lacey, Sijie Tong, Amlan Sinha
 This file contains an example of using the class CahnHilliard() to quickly loop
 over simulations with different input parameters.
 """
 import sys
 import os
+import time as time
 srcDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))+'/src'
 sys.path.insert(0,srcDir)
 
@@ -16,7 +17,7 @@ from cahnhilliard import CahnHilliard
 # -------------------------------
 global_inputs = {
 # 'N' : 100, # lattice points per axis
-'dx' : 1, # lattice spacing
+'dx' : 0.5, # lattice spacing
 # 'dt' : 0.01, # timestep size
 # 'tsteps' : 10001, # number of timesteps
 'tol' : 1e-5, # convergence criterion for implicit methods (not used for explicit)
@@ -37,11 +38,8 @@ global_inputs = {
 # Can be easily looped over for multiple runs with different parameters.
 # (comment out looped over inputs in global_inputs dict, ie N, spatial method)
 specific_inputs = [
-# {'N':100,'time_method':'1FE','dt' : 0.01,'tsteps' : 10001,'dump' : 1000,'output_path' : './output1.gif'},
-#{'N':100,'spatial_method':'2CD','time_method':'1BE','dt' : 0.2,'tsteps' : 401,'dump' : 40,'output_path' : './output2.gif'},
-#{'N':100,'spatial_method':'spectral','time_method':'semi-implicit','dt' : 0.2,'tsteps' : 401,'dump' : 40,'output_path' : './output3.gif'},
-{'N':100,'spatial_method':'spectral','time_method':'explicit','dt' : 0.004,'tsteps' : 12001,'dump' : 1200,'output_path' : './output4.gif'},
-# {'N':100,'time_method':'2CD','output_path' : './output3.gif'}
+{'N':100,'spatial_method':'4CD','time_method':'RK4','dt' : 0.001,'tsteps' : 100001,'dump' : 10000,'output_path' : './output1.gif'},
+{'N':100,'spatial_method':'4CD','time_method':'1FE','dt' : 0.001,'tsteps' : 100001,'dump' : 10000,'output_path' : './output2.gif'},
 ]
 
 # -------------------------------
@@ -49,4 +47,7 @@ specific_inputs = [
 # -------------------------------
 for inp in specific_inputs:
     ch = CahnHilliard(**global_inputs,**inp)
+    tStart = time.time()
     ch.run()
+    tEnd = time.time()
+    print('Time taken = '+str(tEnd-tStart))

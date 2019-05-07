@@ -1,6 +1,6 @@
 """ cahnhilliard.py
 This file is a part of Cahn-Hilliard
-Authors: Cristian Lacey, Sijie Tong
+Authors: Cristian Lacey, Sijie Tong, Amlan Sinha
 This file contains the class CahnHilliard(), objects of which solve the
 Cahn-Hilliard equation using specified spatial and temporal methods.
 """

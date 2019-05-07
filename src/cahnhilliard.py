@@ -1,15 +1,17 @@
 """ cahnhilliard.py
 This file is a part of Cahn-Hilliard
-Authors: Cristian Lacey, Sijie Tong
+Authors: Cristian Lacey, Sijie Tong, Amlan Sinha
 This file contains the class CahnHilliard(), objects of which solve the
 Cahn-Hilliard equation using specified spatial and temporal methods.
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 from scipy import sparse
 from scipy import linalg
 import scipy.sparse.linalg as la
+from scipy.stats import multivariate_normal
 
 import imageio
 
@@ -42,13 +44,20 @@ class CahnHilliard():
 
 
         # Initialize seed value
-        np.random.seed(seed=seed)
+        #np.random.seed(seed=seed)
 
         # Build t vector
         self.t = np.arange(0, tsteps*dt, dt)
 
         # Initialize phi as NxN matrix with random values bounded by phi_avg + noise/2
-        phi = phi_avg*(np.ones((N,N))) + noise*(np.random.rand(N,N)-0.5)
+        #phi = phi_avg*(np.ones((N,N))) + noise*(np.random.rand(N,N)-0.5)
+        XX = np.arange(-25, 25, dx)
+        YY = np.arange(-25, 25, dx)
+        XX, YY = np.meshgrid(XX, YY)
+        pos = np.dstack((XX,YY))
+        mn  = multivariate_normal([0, 0], [[25, 0], [0, 25]])
+        phi = mn.pdf(pos)
+        phi = phi-0.5*phi[int(np.round(len(XX)/2)),int(np.round(len(YY)/2))]
 
         # Unravel phi in col major form
         self.phi = np.ravel(phi, order='F')
@@ -61,7 +70,7 @@ class CahnHilliard():
 
         # Get k^2 for spectral method
         self.k2 = self.get_k2(N,spatial_method=spatial_method)
-        
+
         # Initialize filenames for gif generation
         self.filenames = ['t'+str(x).zfill(3)+'.png' for x in range(int(tsteps/dump)+1)]
 
@@ -86,6 +95,14 @@ class CahnHilliard():
         B = self.B
         tol = self.tol
 
+        path = "./analysis/"+self.spatial_method+","+self.time_method+","+str(N)
+        try:
+            os.mkdir(path)
+        except OSError:
+            print("Creation of the directory %s failed" %path)
+        else:
+            print("Successfully created the directory %s" %path)
+
         for i in range(tsteps):
             print(t[i])
             if i % dump == 0:
@@ -94,6 +111,7 @@ class CahnHilliard():
                 plt.colorbar()
                 plt.savefig('./t'+str(int(i/dump)).zfill(3)+'.png', dpi=300)
                 plt.clf()
+                np.savetxt(path+'/t'+str(int(i/dump)).zfill(3)+'.txt', phi_plot)
             phi = self.step(phi,dt,lap,spatial_method,time_method,B,tol)
 
         if output_gif:
@@ -119,7 +137,7 @@ class CahnHilliard():
                 phi_n = self.spectral_semi_implicit(phi,dt)
             if time_method == 'explicit':
                 phi_n = self.spectral_explicit(phi,dt)
-                
+
 
         elif time_method == '1FE':
             phi_n = self.forward_euler(phi,lap,dt)
@@ -137,12 +155,12 @@ class CahnHilliard():
             phi_n = self.forward_euler(phi,lap,dt)
             phi_n = self.crank_nicolson(phi,lap,dt,phi_n,B,tol)
 
-        
+
         return phi_n
 
     def spectral_semi_implicit(self,phi,dt):
         '''
-        Updates current state of phi using semi-implicit spectral method 
+        Updates current state of phi using semi-implicit spectral method
         '''
         k2 = self.k2
         N = self.N
@@ -157,7 +175,7 @@ class CahnHilliard():
 
     def spectral_explicit(self,phi,dt):
         '''
-        Updates current state of phi using explicit spectral method 
+        Updates current state of phi using explicit spectral method
         '''
         k2 = self.k2
         N = self.N
@@ -169,7 +187,7 @@ class CahnHilliard():
         phi = np.real(np.fft.ifft2(phi_hat))
         phi = np.ravel(phi, order='F')
         return phi
-        
+
 
     def forward_euler(self,phi,lap,dt):
         '''
@@ -245,7 +263,7 @@ class CahnHilliard():
             A = sparse.diags([16,-1,-1,16,-30,16,-1,-1,16],\
                 [-(N-1),-(N-2),-2,-1,0,1,2,(N-2),(N-1)],shape=(N,N)).toarray()
             A = A/(12*dx*dx)
-  
+
         I = sparse.eye(N)
         lap = sparse.kron(I,A) + sparse.kron(A,I)
         if sparse_format == 'dia':
@@ -292,7 +310,7 @@ class CahnHilliard():
             return k2
         else:
             return None
-        
+
     @staticmethod
     def generate_gif(filenames,output_path):
         '''
@@ -303,10 +321,10 @@ class CahnHilliard():
                 image = imageio.imread(filename)
                 writer.append_data(image)
 
-# -------------------------------
-# INPUT PARAMETERS
-# -------------------------------
-# Sample run. Comment out for imports
+# # -------------------------------
+# # INPUT PARAMETERS
+# # -------------------------------
+# # Sample run. Comment out for imports
 # inputs = {
 # 'N' : 100, # lattice points per axis
 # 'dx' : 0.5, # lattice spacing

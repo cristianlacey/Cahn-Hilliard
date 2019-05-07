@@ -1,6 +1,6 @@
 """ 2CDS_1FDT.py
 This file is a part of Cahn-Hilliard
-Authors: Cristian Lacey, Sijie Tong
+Authors: Cristian Lacey, Sijie Tong, Amlan Sinha
 This file contains a routine to solve the Cahn-Hilliard equation using second
 order centered difference in space and fourth order Runge-Kutta in time.
 """
