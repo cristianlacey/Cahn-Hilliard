@@ -51,8 +51,8 @@ class CahnHilliard():
 
         # Initialize phi as NxN matrix with random values bounded by phi_avg + noise/2
         #phi = phi_avg*(np.ones((N,N))) + noise*(np.random.rand(N,N)-0.5)
-        XX = np.arange(-25, 25, dx)
-        YY = np.arange(-25, 25, dx)
+        XX = np.linspace(-25, 25, N)
+        YY = np.linspace(-25, 25, N)
         XX, YY = np.meshgrid(XX, YY)
         pos = np.dstack((XX,YY))
         mn  = multivariate_normal([0, 0], [[25, 0], [0, 25]])
@@ -145,6 +145,9 @@ class CahnHilliard():
         elif time_method == 'RK4':
             phi_n = self.rk4(phi,lap,dt)
 
+        elif time_method == 'RK5':
+            phi_n = self.rk5(phi,lap,dt)
+
         elif time_method == '1BE':
             # Take forward euler result as initial guess
             phi_n = self.forward_euler(phi,lap,dt)
@@ -206,6 +209,19 @@ class CahnHilliard():
         k3 = dt*self.calc_rhs(phi+k2/2,lap)
         k4 = dt*self.calc_rhs(phi+k3,lap)
         phi_n = phi + (k1 + 2*k2 + 2*k3 + k4)/6
+        return phi_n
+
+    def rk5(self,phi,lap,dt):
+        '''
+        Updates current state of phi using fifth order Runge-Kutta in time.
+        '''
+        k1 = dt*self.calc_rhs(phi,lap)
+        k2 = dt*self.calc_rhs(phi+k1/4,lap)
+        k3 = dt*self.calc_rhs(phi+k1/8+k2/8,lap)
+        k4 = dt*self.calc_rhs(phi-k2/2+k3,lap)
+        k5 = dt*self.calc_rhs(phi+3*k1/16+9*k4/16,lap)
+        k6 = dt*self.calc_rhs(phi-3*k1/7+2*k2/7+12*k3/7-12*k4/7+8*k5/7,lap)
+        phi_n = phi + (7*k1 + 32*k3 + 12*k4 + 32*k5 + 7*k6)/90
         return phi_n
 
     @staticmethod
@@ -284,7 +300,7 @@ class CahnHilliard():
         '''
         if spatial_method == 'spectral':
             return None
-        if time_method in ['1FE','RK4']:
+        if time_method in ['1FE','RK4','RK5']:
             return None
         elif time_method == '1BE':
             B = sparse.eye(N*N) + dt*(lap + lap.dot(lap))
@@ -338,7 +354,7 @@ class CahnHilliard():
 # 'seed' : 0, # seed for random initilization (use None for random output)
 #
 # 'spatial_method' : '4CD', # Choice of 2CD, 4CD
-# 'time_method' : 'RK4', # Choice of 1FE, RK4, 1BE, 2CN
+# 'time_method' : 'RK4', # Choice of 1FE, RK4, RK5, 1BE, 2CN
 # 'sparse_format' : 'csr', # Choice of dia, csc, csr
 #
 # 'output_gif' : True,
