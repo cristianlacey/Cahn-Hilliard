@@ -95,7 +95,7 @@ class CahnHilliard():
         B = self.B
         tol = self.tol
 
-        path = "./analysis/"+self.spatial_method+","+self.time_method+","+str(N)
+        path = "../analysis/"+self.spatial_method+","+self.time_method+","+str(N)
         try:
             os.mkdir(path)
         except OSError:
@@ -137,7 +137,8 @@ class CahnHilliard():
                 phi_n = self.spectral_semi_implicit(phi,dt)
             if time_method == 'explicit':
                 phi_n = self.spectral_explicit(phi,dt)
-
+            if time_method == 'RK4':
+                phi_n =self.spectral_rk4(phi,dt)
 
         elif time_method == '1FE':
             phi_n = self.forward_euler(phi,lap,dt)
@@ -191,6 +192,29 @@ class CahnHilliard():
         phi = np.ravel(phi, order='F')
         return phi
 
+    def spectral_rk4(self,phi,dt):
+        '''
+        Updates current state of phi using spectral method in space and rk4 in time
+        '''
+        k2 = self.k2
+        N = self.N
+        phi = phi.reshape((N,N),order='F')
+        phi_hat = np.fft.fft2(phi)
+        d1 = dt*self.spectral_rhs(phi_hat)
+        d2 = dt*self.spectral_rhs(phi_hat+d1/2)
+        d3 = dt*self.spectral_rhs(phi_hat+d2/2)
+        d4 = dt*self.spectral_rhs(phi_hat+d3)
+        phi_hat = phi_hat+1/6*(d1+d2*2+d3*2+d4)
+        phi = np.real(np.fft.ifft2(phi_hat))
+        phi = np.ravel(phi,order='F')
+        return phi
+
+    def spectral_rhs(self,phi_hat):
+        k2 = self.k2
+        phi = np.real(np.fft.ifft2(phi_hat))
+        g = phi**3-phi
+        g_hat = np.fft.fft2(g)
+        return -k2*(g_hat+k2*phi_hat)
 
     def forward_euler(self,phi,lap,dt):
         '''
@@ -317,9 +341,9 @@ class CahnHilliard():
         return B
 
     def get_k2(self,N,spatial_method='spectral'):
-
+        dx = self.dx
         if spatial_method == 'spectral':
-            kx1d = np.append(np.linspace(0,N//2,N//2+1),np.linspace(-((N-1)//2),-1,(N-1)//2))*2*np.pi/N
+            kx1d = np.append(np.linspace(0,N//2,N//2+1),np.linspace(-((N-1)//2),-1,(N-1)//2))*2*np.pi/(N*dx)
             ky1d = kx1d
             kx, ky =np.meshgrid(kx1d,ky1d)
             k2 = kx**2+ky**2
