@@ -107,7 +107,7 @@ class CahnHilliard():
             print(t[i])
             if i % dump == 0:
                 phi_plot = phi.reshape((N,N),order='F')
-                plt.imshow(phi_plot)
+                plt.imshow(phi_plot,vmin=-1,vmax=1)
                 plt.title('t = %.1f s' % t[i])
                 plt.colorbar()
                 image_num = str(int(i/dump)).zfill(3)
